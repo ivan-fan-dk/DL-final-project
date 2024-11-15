@@ -30,8 +30,8 @@ for i in ${files[@]}; do
         
         if [[ ${i:0:10} != ${current_foldername} ]]; then
                 # zip -r $current_foldername'.zip' $current_foldername
-                mv $current_foldername /content/gdrive/MyDrive/DL_Data/$current_foldername
+                mv $current_foldername /content/gdrive/MyDrive/DL_Sample_Data/$current_foldername
                 current_foldername=${i:0:10}
         fi
 done
-mv $current_foldername /content/gdrive/MyDrive/DL_Data/$current_foldername
+mv $current_foldername /content/gdrive/MyDrive/DL_Sample_Data/$current_foldername
