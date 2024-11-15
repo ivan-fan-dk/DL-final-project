@@ -180,20 +180,8 @@ for i in ${files[@]}; do
         
         if [[ ${i:0:10} != ${current_foldername} ]]; then
                 # zip -r $current_foldername'.zip' $current_foldername
-                mv $current_foldername /content/gdrive/MyDrive/DL_Final_Project/$current_foldername
+                mv $current_foldername /content/gdrive/MyDrive/DL_Data/$current_foldername
                 current_foldername=${i:0:10}
         fi
 done
-mv $current_foldername /content/gdrive/MyDrive/DL_Final_Project/$current_foldername
-
-# from google.colab import drive
-# drive.mount('/content/gdrive')
-# !mkdir /content/gdrive/MyDrive/DL_Final_Project/
-# !chmod +x ./raw_data_downloader.sh
-# !./raw_data_downloader.sh
-# !git clone https://github.com/ivan-fan-dk/DL-final-project.git
-# !mv DL-final-project/* ./
-# !rm -rf DL-final-project
-# !pip3 install -r requirements.txt
-# # !mkdir formatted
-# !python3 data/prepare_train_data.py ./ --dataset-format 'kitti_raw' --dump-root ./formatted/data/ --width 416 --height 128 --num-threads 4
+mv $current_foldername /content/gdrive/MyDrive/DL_Data/$current_foldername
