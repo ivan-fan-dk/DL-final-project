@@ -27,7 +27,9 @@ for i in ${files[@]}; do
         unzip -o -q $shortname
         rm $shortname
         find . -type d \( -name "image_00" -o -name "image_01" \) -exec rm -r {} +      # remove folders with grayscale images
-        
+        find . -type f -name "*.png" | awk -F'/' '{print $NF, $0}' | awk '$1 ~ /^[0-9]+\.png$/ && $1 > "0000000005.png" {print $2}' | xargs rm
+        find . -type f -name "*.bin" | awk -F'/' '{print $NF, $0}' | awk '$1 ~ /^[0-9]+\.bin$/ && $1 > "0000000005.bin" {print $2}' | xargs rm
+        find . -type f -name "*.txt" | awk -F'/' '{print $NF, $0}' | awk '$1 ~ /^[0-9]+\.txt$/ && $1 > "0000000005.txt" {print $2}' | xargs rm
         if [[ ${i:0:10} != ${current_foldername} ]]; then
                 # zip -r $current_foldername'.zip' $current_foldername
                 mv $current_foldername /content/gdrive/MyDrive/DL_Sample_Data/$current_foldername
