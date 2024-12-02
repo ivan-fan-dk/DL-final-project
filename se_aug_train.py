@@ -94,7 +94,7 @@ def main():
     torch.manual_seed(args.seed)
     if args.evaluate:
         args.epochs = 0
-
+  
     tb_writer = SummaryWriter(args.save_path)
     # Data loading code
     normalize = aug_custom_transforms.Normalize(mean=[0.5, 0.5, 0.5],
@@ -102,9 +102,9 @@ def main():
     train_transform = aug_custom_transforms.Compose([
     aug_custom_transforms.RandomHorizontalFlip(),
     aug_custom_transforms.RandomScaleCrop(),
-    RandomGamma(),          # Add gamma shift
-    RandomBrightness(),     # Add brightness shift
-    RandomColor(),          # Add color shift
+    aug_custom_transforms.RandomGamma(),          # Add gamma shift
+    aug_custom_transforms.RandomBrightness(),     # Add brightness shift
+    aug_custom_transforms.RandomColor(),          # Add color shift
     aug_custom_transforms.ArrayToTensor(),
     normalize
 ])
