@@ -97,18 +97,18 @@ def main():
 
     tb_writer = SummaryWriter(args.save_path)
     # Data loading code
-    normalize = custom_transforms.Normalize(mean=[0.5, 0.5, 0.5],
+    normalize = aug_custom_transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                             std=[0.5, 0.5, 0.5])
     train_transform = aug_custom_transforms.Compose([
-    custom_transforms.RandomHorizontalFlip(),
-    custom_transforms.RandomScaleCrop(),
+    aug_custom_transforms.RandomHorizontalFlip(),
+    aug_custom_transforms.RandomScaleCrop(),
     RandomGamma(),          # Add gamma shift
     RandomBrightness(),     # Add brightness shift
     RandomColor(),          # Add color shift
-    custom_transforms.ArrayToTensor(),
+    aug_custom_transforms.ArrayToTensor(),
     normalize
 ])
-    valid_transform = custom_transforms.Compose([custom_transforms.ArrayToTensor(), normalize])
+    valid_transform = aug_custom_transforms.Compose([aug_custom_transforms.ArrayToTensor(), normalize])
 
     print("=> fetching scenes in '{}'".format(args.data))
     train_set = SequenceFolder(
