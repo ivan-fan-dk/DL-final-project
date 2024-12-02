@@ -83,7 +83,7 @@ def crop_like(input, ref):
 
 class SE_DispNetS(nn.Module):
     def __init__(self, alpha=10, beta=0.01):
-        super(DispNetS, self).__init__()
+        super(SE_DispNetS, self).__init__()
 
         self.alpha = alpha
         self.beta = beta
