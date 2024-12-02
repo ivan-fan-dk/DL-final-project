@@ -83,7 +83,7 @@ class RandomScaleCrop(object):
 
         return cropped_images, output_intrinsics
 
-  class RandomGamma(object):
+class RandomGamma(object):
     """Apply random gamma shift."""
     def __init__(self, min_gamma=0.8, max_gamma=1.2):
         self.min_gamma = min_gamma
