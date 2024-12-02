@@ -1,3 +1,3 @@
 from .DispNetS import DispNetS
-from .SE_DispNetS import SE_DispNetS, SE_Bottleneck
+from .SE_DispNetS import SE_DispNetS, SEBottleneck
 from .PoseExpNet import PoseExpNet
