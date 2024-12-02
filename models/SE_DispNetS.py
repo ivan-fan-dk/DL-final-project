@@ -7,8 +7,8 @@ class SEBottleneck(nn.Module):
     def __init__(self, in_channels, rate=16): # rate is reduction ratio
         super().__init__()
         
-        # Shortcut path - needs to match doubled output channels
-        self.shortcut = nn.Sequential(
+        # Skip connection path - needs to match doubled output channels
+        self.skip = nn.Sequential(
             nn.Conv2d(in_channels, in_channels*2, kernel_size=1, bias=False),
             nn.BatchNorm2d(in_channels*2)
         )
@@ -38,7 +38,7 @@ class SEBottleneck(nn.Module):
         )
 
     def forward(self, x):
-        identity = self.shortcut(x)
+        identity = self.skip(x)
         
         out = self.main_path(x)
         se_weight = self.se(out)
