@@ -4,45 +4,54 @@ import torch.nn.functional as F
 from torch.nn.init import xavier_uniform_, zeros_
 
 class SEBottleneck(nn.Module):
-    def __init__(self, channels):
+    def __init__(self, in_channels, rate=16): # rate is reduction ratio
         super().__init__()
         
-        # Main Path
+        # Shortcut path - needs to match doubled output channels
+        self.shortcut = nn.Sequential(
+            nn.Conv2d(in_channels, in_channels*2, kernel_size=1, bias=False),
+            nn.BatchNorm2d(in_channels*2)
+        )
+
+        # Main Path (follows paper's structure)
         self.main_path = nn.Sequential(
-            nn.Conv2d(channels, channels, kernel_size=1, bias=False),
-            nn.BatchNorm2d(channels),
+            # First: in_channels -> in_channels
+            nn.Conv2d(in_channels, in_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(in_channels),
             nn.PReLU(),
-            nn.Conv2d(channels, channels, kernel_size=3, padding=1, bias=False),
-            nn.BatchNorm2d(channels),
+            # Second: in_channels -> in_channels*2
+            nn.Conv2d(in_channels, in_channels*2, kernel_size=3, padding=1, bias=False),
+            nn.BatchNorm2d(in_channels*2),
             nn.PReLU(),
-            nn.Conv2d(channels, channels, kernel_size=1, bias=False),
-            nn.BatchNorm2d(channels)
+            # Final: in_channels*2 -> in_channels*2
+            nn.Conv2d(in_channels*2, in_channels*2, kernel_size=1, bias=False),
+            nn.BatchNorm2d(in_channels*2)
         )
         
+        # SE Block
         self.se = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
-            nn.Conv2d(channels, channels // 16, kernel_size=1, bias=False),
+            nn.Conv2d(in_channels*2, in_channels*2 // rate, kernel_size=1, bias=False),
             nn.PReLU(),
-            nn.Conv2d(channels // 16, channels, kernel_size=1, bias=False),
+            nn.Conv2d(in_channels*2 // rate, in_channels*2, kernel_size=1, bias=False),
             nn.Sigmoid()
         )
 
     def forward(self, x):
-        # Main path
-        out = self.main_path(x)
+        identity = self.shortcut(x)
         
-        # SE attention
+        out = self.main_path(x)
         se_weight = self.se(out)
         out = out * se_weight
         
-        return x + out
+        return identity + out
 
 def downsample_conv(in_planes, out_planes, kernel_size=3):
     return nn.Sequential(
         nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=2, padding=(kernel_size-1)//2),
         nn.BatchNorm2d(out_planes),
         nn.PReLU(),
-        SEBottleneck(out_planes) 
+        SEBottleneck(out_planes)
     )
 
 
