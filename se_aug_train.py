@@ -7,7 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
-import custom_transforms
+import aug_custom_transforms
 import models
 from utils import tensor2array, save_checkpoint, save_path_formatter, log_output_tensorboard
 
