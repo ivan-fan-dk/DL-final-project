@@ -9,6 +9,7 @@ import torch.optim
 import torch.utils.data
 import custom_transforms
 import models
+from .SE_DispNetS import SE_DispNetS
 from utils import tensor2array, save_checkpoint, save_path_formatter, log_output_tensorboard
 
 from loss_functions import photometric_reconstruction_loss, explainability_loss, smooth_loss
