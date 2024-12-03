@@ -89,13 +89,10 @@ class RandomGamma(object):
         self.min_gamma = min_gamma
         self.max_gamma = max_gamma
         
-    def __call__(self, sample):
+    def __call__(self, images, intrinsics):
         gamma = np.random.uniform(self.min_gamma, self.max_gamma)
-        for k in sample.keys():
-            # Only apply to RGB images, not depth/pose
-            if k.startswith('color'):
-                sample[k] = sample[k] ** gamma
-        return sample
+        gamma_images = [im ** gamma for im in images]
+        return gamma_images, intrinsics
 
 class RandomBrightness(object):
     """Apply random brightness shift."""
@@ -103,12 +100,10 @@ class RandomBrightness(object):
         self.min_bright = min_bright
         self.max_bright = max_bright
         
-    def __call__(self, sample):
+    def __call__(self, images, intrinsics):
         bright = np.random.uniform(self.min_bright, self.max_bright)
-        for k in sample.keys():
-            if k.startswith('color'):
-                sample[k] = sample[k] * bright
-        return sample
+        bright_images = [im * bright for im in images]
+        return bright_images, intrinsics
 
 class RandomColor(object):
     """Apply random color shift to each channel."""
@@ -116,10 +111,12 @@ class RandomColor(object):
         self.min_factor = min_factor
         self.max_factor = max_factor
         
-    def __call__(self, sample):
-        for k in sample.keys():
-            if k.startswith('color'):
-                factors = np.random.uniform(self.min_factor, self.max_factor, 3)
-                for i in range(3):
-                    sample[k][:,:,i] = sample[k][:,:,i] * factors[i]
-        return sample
+    def __call__(self, images, intrinsics):
+        factors = np.random.uniform(self.min_factor, self.max_factor, 3)
+        color_images = []
+        for im in images:
+            color_im = np.copy(im)
+            for i in range(3):
+                color_im[:,:,i] = color_im[:,:,i] * factors[i]
+            color_images.append(color_im)
+        return color_images, intrinsics
