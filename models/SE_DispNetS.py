@@ -37,14 +37,22 @@ class SEBottleneck(nn.Module):
             nn.Sigmoid()
         )
 
+        # Add channel reduction at the end
+        self.channel_reduce = nn.Conv2d(in_channels*2, in_channels, kernel_size=1, bias=False)
+
+
     def forward(self, x):
         identity = self.skip(x)
         
         out = self.main_path(x)
         se_weight = self.se(out)
         out = out * se_weight
-        
-        return identity + out
+        out = identity + out
+
+        # Reduce channels back for DispNet
+        return self.channel_reduce(out)
+
+
 
 def downsample_conv(in_planes, out_planes, kernel_size=3):
     return nn.Sequential(
