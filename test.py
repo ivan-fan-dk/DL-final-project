@@ -1,3 +1,4 @@
+# `test.py` and `test_se.py` are sister files.
 import torch
 
 from imageio.v3 import imread
