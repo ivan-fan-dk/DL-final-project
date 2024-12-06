@@ -50,7 +50,6 @@ def main():
     dataset_dir = Path(args.dataset_dir)
     output_dir = Path(args.output_dir)
     output_dir.makedirs_p()
-    Path("hist").makedirs_p()
 
     if args.dataset_list is not None:
         with open(args.dataset_list, 'r') as f:
