@@ -125,33 +125,45 @@ def main():
             continue
 
 def show_results(output_dir, img, depth, gt, filename):
-    fig = plt.figure(figsize=(12, 14), constrained_layout=True)
-    gs = fig.add_gridspec(4, 1, height_ratios=[1, 1, 1, 0.2])
+    # Increase figure size to accommodate the additional subplot
+    fig = plt.figure(figsize=(12, 16), constrained_layout=True)
+    gs = fig.add_gridspec(5, 1, height_ratios=[1, 1, 1, 1, 0.2])
 
+    # Input Image
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.imshow(img)
     ax1.set_title('Input Image', fontsize=14)
     ax1.axis('off')
     ax1.set_aspect('equal')
 
+    # Predicted Depth Map
     ax2 = fig.add_subplot(gs[1, 0])
     ax2.imshow(depth, cmap="rainbow", aspect='equal')
     ax2.set_title('Depth Prediction Map', fontsize=14)
     ax2.axis('off')
 
+    # Ground Truth Depth Map
     ax3 = fig.add_subplot(gs[2, 0])
-    error_map = np.where(gt == 0., 0., np.abs(depth - gt))
+    # Create a custom colormap that shows black for zero values
     rainbow_cmap = plt.cm.rainbow(np.linspace(0, 1, 256))
     custom_colors = np.vstack(([0, 0, 0, 1], rainbow_cmap))
     custom_cmap = ListedColormap(custom_colors)
-    im = ax3.imshow(error_map, cmap=custom_cmap, aspect='equal')
-    ax3.set_title('Depth Error Map', fontsize=14)
+    ax3.imshow(gt, cmap=custom_cmap, aspect='equal')
+    ax3.set_title('Ground Truth Depth Map', fontsize=14)
     ax3.axis('off')
 
-    fig.colorbar(im, ax=ax3, orientation="horizontal", pad=0.1)
-
+    # Error Map
     ax4 = fig.add_subplot(gs[3, 0])
+    error_map = np.where(gt == 0., 0., np.abs(depth - gt))
+    im = ax4.imshow(error_map, cmap=custom_cmap, aspect='equal')
+    ax4.set_title('Depth Error Map', fontsize=14)
     ax4.axis('off')
+
+    fig.colorbar(im, ax=ax4, orientation="horizontal", pad=0.1)
+
+    # Metrics Table
+    ax5 = fig.add_subplot(gs[4, 0])
+    ax5.axis('off')
     
     # Extract non-zero values for metric computation
     valid_mask = gt != 0
@@ -165,7 +177,7 @@ def show_results(output_dir, img, depth, gt, filename):
          sqErrorRel(depth_valid, gt_valid), 
          absErrorRel(depth_valid, gt_valid)]
     ]
-    table = ax4.table(cellText=metrics, cellLoc='center', loc='center', colWidths=[0.2] * 4)
+    table = ax5.table(cellText=metrics, cellLoc='center', loc='center', colWidths=[0.2] * 4)
     table.auto_set_font_size(False)
     table.set_fontsize(12)
     table.scale(1, 2)
