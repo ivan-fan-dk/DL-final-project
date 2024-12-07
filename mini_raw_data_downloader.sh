@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Create the local data directory if it doesn't exist
+# Create the local data directory
 mkdir -p ./DL_Mini_Data
 
 files=(2011_09_26_calib.zip
@@ -37,7 +37,6 @@ for i in ${files[@]}; do
     find . -type f -name "*.txt" | awk -F'/' '{print $NF, $0}' | awk '$1 ~ /^[0-9]+\.txt$/ && $1 > "0000000005.txt" {print $2}' | xargs rm
     
     if [[ ${i:0:10} != ${current_foldername} ]]; then
-        # Move to local DL_Mini_Data instead of Google Drive
         mv $current_foldername ./DL_Mini_Data/$current_foldername
         current_foldername=${i:0:10}
     fi
@@ -45,3 +44,9 @@ done
 
 # Move the last folder
 mv $current_foldername ./DL_Mini_Data/$current_foldername
+
+# Copy to Google Drive if needed
+if [ -d "/content/gdrive/MyDrive" ]; then
+    mkdir -p /content/gdrive/MyDrive/DL_Mini_Data
+    cp -r ./DL_Mini_Data/* /content/gdrive/MyDrive/DL_Mini_Data/
+fi
