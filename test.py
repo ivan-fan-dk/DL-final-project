@@ -40,14 +40,18 @@ def main():
         print('Image dimensions must be positive!')
         return
 
-    # Create necessary directories
-    output_dir = Path(args.output_dir)
-    output_dir.makedirs_p()
-    hist_dir = Path("hist")
-    hist_dir.makedirs_p()
+    # Create necessary directories with absolute paths
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    output_dir = os.path.join(base_dir, args.output_dir)
+    hist_dir = os.path.join(base_dir, "hist")
+    
+    # Create directories if they don't exist
+    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(hist_dir, exist_ok=True)
 
+    # Load model with weights_only=True for security
     disp_net = DispNetS().to(device)
-    weights = torch.load(args.pretrained, map_location=device)
+    weights = torch.load(args.pretrained, map_location=device, weights_only=True)
     disp_net.load_state_dict(weights['state_dict'])
     disp_net.eval()
 
@@ -66,7 +70,7 @@ def main():
         try:
             # Load ground truth depth map
             file_prefix, file_suffix = file.split('/')[-1].split('sync_image')
-            gt_path = "test_gt/" + file_prefix + "sync_groundtruth_depth" + file_suffix
+            gt_path = os.path.join(base_dir, "test_gt", file_prefix + "sync_groundtruth_depth" + file_suffix)
             print("gt_path: ", gt_path)
             
             # Handle file reading with error checking
@@ -106,18 +110,23 @@ def main():
                 gt = (gt - gt_min)/(gt.max() - gt_min)
                 gt[gt < 0.] = 0.
 
+                plt.figure()
                 plt.hist(depth[gt != 0.].flatten(), bins=100, label='depth')
                 plt.hist(gt[gt != 0.].flatten(), bins=100, label="gt")
-                
                 plt.legend()
-                plt.savefig(f"hist/hist_{file_name}.png")
-                plt.clf()
+                
+                # Save histogram with absolute path
+                hist_path = os.path.join(hist_dir, f"hist_{file_name}.png")
+                plt.savefig(hist_path)
+                plt.close()
 
                 print()
                 print("image shape: ", img.shape, "image max: ", img.max(), "image min: ", img.min())
                 print("depth shape: ", depth.shape, "depth max: ", depth.max(), "depth min: ", depth.min())
                 print("gt shape: ", gt.shape, "gt max: ", gt.max(), "gt min: ", gt.min())
                 print()
+                
+                # Call show_results with absolute output directory path
                 show_results(output_dir, img, depth, gt, file_name)
 
         except Exception as e:
@@ -183,40 +192,27 @@ def show_results(output_dir, img, depth, gt, filename):
     table.scale(1, 2)
 
     plt.suptitle(f"{''.join(filename.split('_sync_image_'))}", fontsize=16)
-    plt.savefig(f"{output_dir}/{filename}.png", bbox_inches='tight')
+    
+    # Save figure with absolute path
+    output_path = os.path.join(output_dir, f"{filename}.png")
+    plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
 def SILog(pred, gt):
-    """
-    Scale-Invariant Logarithmic Error
-    pred: predicted depth
-    gt: ground truth depth
-    """
+    """Scale-Invariant Logarithmic Error"""
     d = np.log(pred) - np.log(gt)
     return "{:.3f}".format(np.sqrt(np.mean(np.square(d)) - np.square(np.mean(d))))
 
 def sqErrorRel(pred, gt):
-    """
-    Squared relative error
-    pred: predicted depth
-    gt: ground truth depth
-    """
+    """Squared relative error"""
     return "{:.3f}".format(np.mean(np.square(pred - gt) / gt))
 
 def absErrorRel(pred, gt):
-    """
-    Absolute relative error
-    pred: predicted depth
-    gt: ground truth depth
-    """
+    """Absolute relative error"""
     return "{:.3f}".format(np.mean(np.abs(pred - gt) / gt))
 
 def RMSE(pred, gt):
-    """
-    Root Mean Squared Error
-    pred: predicted depth
-    gt: ground truth depth
-    """
+    """Root Mean Squared Error"""
     return "{:.3f}".format(np.sqrt(np.mean(np.square(pred - gt))))
 
 if __name__ == '__main__':
