@@ -124,99 +124,89 @@ def main():
             show_results(output_dir, img, depth, gt, file_name)
 
 def show_results(output_dir, img, depth, gt, filename):
-    # Increase figure size to accommodate the additional subplot
-    fig = plt.figure(figsize=(12, 16), constrained_layout=True)
-    gs = fig.add_gridspec(5, 1, height_ratios=[1, 1, 1, 1, 0.2])
+    # Create figure and subplots
+    fig = plt.figure(figsize=(12, 14), constrained_layout=True)
+    gs = fig.add_gridspec(4, 1, height_ratios=[1, 1, 1, 0.2])  # Adjust height for table
 
     # Input Image
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.imshow(img)
     ax1.set_title('Input Image', fontsize=14)
     ax1.axis('off')
-    ax1.set_aspect('equal')
+    ax1.set_aspect('equal')  # Force equal aspect ratio
 
-    # Predicted Depth Map
+    # Depth Prediction Map
     ax2 = fig.add_subplot(gs[1, 0])
-    ax2.imshow(depth, cmap="rainbow", aspect='equal')
+    ax2.imshow(depth, cmap="rainbow", aspect='equal')  # Force equal aspect ratio
     ax2.set_title('Depth Prediction Map', fontsize=14)
     ax2.axis('off')
 
-    # Ground Truth Depth Map
+    # Depth Error Map
     ax3 = fig.add_subplot(gs[2, 0])
-    # Create a custom colormap that shows black for zero values
-    rainbow_cmap = plt.cm.rainbow(np.linspace(0, 1, 256))
-    custom_colors = np.vstack(([0, 0, 0, 1], rainbow_cmap))
+    error_map = np.where(gt == 0., 0., np.abs(depth - gt))
+    rainbow_cmap = plt.cm.rainbow(np.linspace(0, 1, 256))  # Get rainbow colormap
+    custom_colors = np.vstack(([0, 0, 0, 1], rainbow_cmap))  # Add black for zero
     custom_cmap = ListedColormap(custom_colors)
-    ax3.imshow(gt, cmap=custom_cmap, aspect='equal')
-    ax3.set_title('Ground Truth Depth Map', fontsize=14)
+    im = ax3.imshow(error_map, cmap=custom_cmap, aspect='equal')  # Force equal aspect ratio
+    ax3.set_title('Depth Error Map', fontsize=14)
     ax3.axis('off')
 
-    # Error Map
-    ax4 = fig.add_subplot(gs[3, 0])
-    error_map = np.where(gt == 0., 0., np.abs(depth - gt))
-    im = ax4.imshow(error_map, cmap=custom_cmap, aspect='equal')
-    ax4.set_title('Depth Error Map', fontsize=14)
-    ax4.axis('off')
-
-    fig.colorbar(im, ax=ax4, orientation="horizontal", pad=0.1)
+    # Add colorbar for the error map
+    fig.colorbar(im, ax=ax3, orientation="horizontal", pad=0.1)
 
     # Metrics Table
-    ax5 = fig.add_subplot(gs[4, 0])
-    ax5.axis('off')
-    
-    # Extract non-zero values for metric computation
-    valid_mask = gt != 0
-    depth_valid = depth[valid_mask]
-    gt_valid = gt[valid_mask]
-    
+    ax4 = fig.add_subplot(gs[3, 0])
+    ax4.axis('off')  # Turn off the axes for the table
+    depth = depth[gt != 0.]
+    gt = gt[gt != 0.]
     metrics = [
-        ['RMSE', 'SI-Log', 'Squared Rel', 'Abs Rel'],
-        [RMSE(depth_valid, gt_valid), 
-         SILog(depth_valid, gt_valid), 
-         sqErrorRel(depth_valid, gt_valid), 
-         absErrorRel(depth_valid, gt_valid)]
+        ['RMSE', 'SI-Log', 'sqErrorRel', 'absErrorRel'],
+        [RMSE(depth, gt), SILog(depth, gt), sqErrorRel(depth, gt), absErrorRel(depth, gt)]
     ]
-    table = ax5.table(cellText=metrics, cellLoc='center', loc='center', colWidths=[0.2] * 4)
+    table = ax4.table(cellText=metrics, cellLoc='center', loc='center', colWidths=[0.2] * 4)
     table.auto_set_font_size(False)
     table.set_fontsize(12)
-    table.scale(1, 2)
+    table.scale(1, 2)  # Adjust table scaling
 
-    plt.suptitle(f"{''.join(filename.split('_sync_image_'))}", fontsize=16)
+    # Add a main title and save
+    plt.suptitle(f"{''.join(filename.split('_sync_image_'))}", fontsize=16)#, y=0.98)
     plt.savefig(f"{output_dir}/{filename}.png", bbox_inches='tight')
     plt.close(fig)
 
-def SILog(pred, gt):
+def SILog(x, y):
     """
     Scale-Invariant Logarithmic Error
-    pred: predicted depth
-    gt: ground truth depth
+    x: predicted
+    y: ground truth
     """
-    d = np.log(pred) - np.log(gt)
-    return "{:.3f}".format(np.sqrt(np.mean(np.square(d)) - np.square(np.mean(d))))
+    mask = np.where((x > 0.) & (y > 0.))
+    x, y = x[mask], y[mask]
+    d = np.log(x) - np.log(y)
+    return "{:.2f}".format(np.mean(np.square(d)) - np.square(np.mean(d)))
 
-def sqErrorRel(pred, gt):
+def sqErrorRel(x, y):
     """
     Squared relative error
-    pred: predicted depth
-    gt: ground truth depth
+    x: predicted
+    y: ground truth
     """
-    return "{:.3f}".format(np.mean(np.square(pred - gt) / gt))
+    return "{:.2f}".format(np.mean(np.abs(x - y) / y))
 
-def absErrorRel(pred, gt):
+def absErrorRel(x, y):
     """
     Absolute relative error
-    pred: predicted depth
-    gt: ground truth depth
+    x: predicted
+    y: ground truth
     """
-    return "{:.3f}".format(np.mean(np.abs(pred - gt) / gt))
+    return "{:.2f}".format(np.mean(np.square(x - y) / y))
 
-def RMSE(pred, gt):
+def RMSE(x, y):
     """
     Root Mean Squared Error
-    pred: predicted depth
-    gt: ground truth depth
+    x: predicted
+    y: ground truth
     """
-    return "{:.3f}".format(np.sqrt(np.mean(np.square(pred - gt))))
+    return "{:.2f}".format(np.sqrt(np.mean(np.square(x - y))))
 
 if __name__ == '__main__':
     main()
