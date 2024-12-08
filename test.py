@@ -1,3 +1,4 @@
+# `test.py` and `test_se.py` are sister files.
 import torch
 from imageio.v3 import imread
 from skimage.transform import resize
@@ -6,7 +7,6 @@ import numpy as np
 from path import Path
 import argparse
 from tqdm import tqdm
-import os
 from models import DispNetS
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -23,6 +23,7 @@ parser.add_argument("--no-resize", action='store_true', help="no resizing is don
 parser.add_argument("--dataset-list", default=None, type=str, help="Dataset list file")
 parser.add_argument("--dataset-dir", default='.', type=str, help="Dataset directory")
 parser.add_argument("--output-dir", default='output', type=str, help="Output directory")
+parser.add_argument("--output-hist-dir", default='hist', type=str, help="Output directory for histograms")
 parser.add_argument("--img-exts", default=['png', 'jpg', 'bmp'], nargs='*', type=str, help="images extensions to glob")
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -40,12 +41,10 @@ def main():
         print('Image dimensions must be positive!')
         return
 
-    # Create output directory - using the simple Path approach that worked for inference
-    output_dir = Path('inference')
+    # Create necessary directories
+    output_dir = Path(args.output_dir)
     output_dir.makedirs_p()
-    
-    # Create hist directory in the same way
-    hist_dir = Path('hist')
+    hist_dir = Path(args.output_hist_dir)
     hist_dir.makedirs_p()
 
     disp_net = DispNetS().to(device)
@@ -71,6 +70,7 @@ def main():
             gt_path = "test_gt/" + file_prefix + "sync_groundtruth_depth" + file_suffix
             print("gt_path: ", gt_path)
             
+            # Handle file reading with error checking
             try:
                 gt = imread(gt_path)
                 img = img_as_float(imread(file))
@@ -107,24 +107,18 @@ def main():
                 gt = (gt - gt_min)/(gt.max() - gt_min)
                 gt[gt < 0.] = 0.
 
-                # Create and save histogram
-                plt.figure()
                 plt.hist(depth[gt != 0.].flatten(), bins=100, label='depth')
                 plt.hist(gt[gt != 0.].flatten(), bins=100, label="gt")
-                plt.legend()
                 
-                # Save histogram - using simple path that works in Colab
-                hist_path = f"hist/hist_{file_name}.png"
-                plt.savefig(hist_path)
-                plt.close()
+                plt.legend()
+                plt.savefig(f"{hist_dir}/hist_{file_name}.png")
+                plt.clf()
 
                 print()
                 print("image shape: ", img.shape, "image max: ", img.max(), "image min: ", img.min())
                 print("depth shape: ", depth.shape, "depth max: ", depth.max(), "depth min: ", depth.min())
                 print("gt shape: ", gt.shape, "gt max: ", gt.max(), "gt min: ", gt.min())
                 print()
-                
-                # Save visualization in inference directory
                 show_results(output_dir, img, depth, gt, file_name)
 
         except Exception as e:
@@ -132,45 +126,33 @@ def main():
             continue
 
 def show_results(output_dir, img, depth, gt, filename):
-    # Increase figure size to accommodate the additional subplot
-    fig = plt.figure(figsize=(12, 16), constrained_layout=True)
-    gs = fig.add_gridspec(5, 1, height_ratios=[1, 1, 1, 1, 0.2])
+    fig = plt.figure(figsize=(12, 14), constrained_layout=True)
+    gs = fig.add_gridspec(4, 1, height_ratios=[1, 1, 1, 0.2])
 
-    # Input Image
     ax1 = fig.add_subplot(gs[0, 0])
     ax1.imshow(img)
     ax1.set_title('Input Image', fontsize=14)
     ax1.axis('off')
     ax1.set_aspect('equal')
 
-    # Predicted Depth Map
     ax2 = fig.add_subplot(gs[1, 0])
     ax2.imshow(depth, cmap="rainbow", aspect='equal')
     ax2.set_title('Depth Prediction Map', fontsize=14)
     ax2.axis('off')
 
-    # Ground Truth Depth Map
     ax3 = fig.add_subplot(gs[2, 0])
-    # Create a custom colormap that shows black for zero values
+    error_map = np.where(gt == 0., 0., np.abs(depth - gt))
     rainbow_cmap = plt.cm.rainbow(np.linspace(0, 1, 256))
     custom_colors = np.vstack(([0, 0, 0, 1], rainbow_cmap))
     custom_cmap = ListedColormap(custom_colors)
-    ax3.imshow(gt, cmap=custom_cmap, aspect='equal')
-    ax3.set_title('Ground Truth Depth Map', fontsize=14)
+    im = ax3.imshow(error_map, cmap=custom_cmap, aspect='equal')
+    ax3.set_title('Depth Error Map', fontsize=14)
     ax3.axis('off')
 
-    # Error Map
+    fig.colorbar(im, ax=ax3, orientation="horizontal", pad=0.1)
+
     ax4 = fig.add_subplot(gs[3, 0])
-    error_map = np.where(gt == 0., 0., np.abs(depth - gt))
-    im = ax4.imshow(error_map, cmap=custom_cmap, aspect='equal')
-    ax4.set_title('Depth Error Map', fontsize=14)
     ax4.axis('off')
-
-    fig.colorbar(im, ax=ax4, orientation="horizontal", pad=0.1)
-
-    # Metrics Table
-    ax5 = fig.add_subplot(gs[4, 0])
-    ax5.axis('off')
     
     # Extract non-zero values for metric computation
     valid_mask = gt != 0
@@ -184,7 +166,7 @@ def show_results(output_dir, img, depth, gt, filename):
          sqErrorRel(depth_valid, gt_valid), 
          absErrorRel(depth_valid, gt_valid)]
     ]
-    table = ax5.table(cellText=metrics, cellLoc='center', loc='center', colWidths=[0.2] * 4)
+    table = ax4.table(cellText=metrics, cellLoc='center', loc='center', colWidths=[0.2] * 4)
     table.auto_set_font_size(False)
     table.set_fontsize(12)
     table.scale(1, 2)
