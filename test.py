@@ -72,7 +72,7 @@ def main():
             
             # Handle file reading with error checking
             try:
-                gt = imread(gt_path)
+                gt = imread(gt_path).astype(np.int16)
                 img = img_as_float(imread(file))
             except Exception as e:
                 print(f"Error reading files: {str(e)}")
@@ -155,7 +155,7 @@ def show_results(output_dir, img, depth, gt, filename):
     ax4.axis('off')
     
     # Extract non-zero values for metric computation
-    valid_mask = gt != 0
+    valid_mask = (gt != 0.) & (depth != 0.)
     depth_valid = depth[valid_mask]
     gt_valid = gt[valid_mask]
     
