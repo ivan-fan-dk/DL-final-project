@@ -107,8 +107,8 @@ def main():
                 gt = (gt - gt_min)/(gt.max() - gt_min)
                 gt[gt < 0.] = 0.
 
-                plt.hist(depth[gt != 0.].flatten(), bins=100, label='depth')
-                plt.hist(gt[gt != 0.].flatten(), bins=100, label="gt")
+                plt.hist(depth[gt != 0.].flatten(), bins=100, alpha=0.8, label='depth')
+                plt.hist(gt[gt != 0.].flatten(), bins=100, alpha=0.8, label="gt")
                 
                 plt.legend()
                 plt.savefig(f"{hist_dir}/hist_{file_name}.png")
