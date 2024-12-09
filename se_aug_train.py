@@ -1,6 +1,7 @@
 import argparse
 import time
 import csv
+import random
 
 import numpy as np
 import torch
@@ -17,8 +18,13 @@ from inverse_warp import pose_vec2mat
 from logger import TermLogger, AverageMeter
 from tensorboardX import SummaryWriter
 
-torch.manual_seed(1234)
-np.random.seed(1234)
+def set_random_seeds(seed=1234):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
 
 parser = argparse.ArgumentParser(description='Structure from Motion Learner training on KITTI and CityScapes Dataset',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -84,6 +90,7 @@ device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cp
 
 
 def main():
+    set_random_seeds()
     global best_error, n_iter, device
     args = parser.parse_args()
     if args.dataset_format == 'stacked':
@@ -103,14 +110,14 @@ def main():
     normalize = aug_custom_transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                             std=[0.5, 0.5, 0.5])
     train_transform = aug_custom_transforms.Compose([
-    aug_custom_transforms.RandomHorizontalFlip(),
-    aug_custom_transforms.RandomScaleCrop(),
-    aug_custom_transforms.RandomGamma(),          # Add gamma shift
-    aug_custom_transforms.RandomBrightness(),     # Add brightness shift
-    aug_custom_transforms.RandomColor(),          # Add color shift
-    aug_custom_transforms.ArrayToTensor(),
-    normalize
-])
+        aug_custom_transforms.RandomHorizontalFlip(),
+        aug_custom_transforms.RandomScaleCrop(),
+        aug_custom_transforms.RandomGamma(),          # Add gamma shift
+        aug_custom_transforms.RandomBrightness(),     # Add brightness shift
+        aug_custom_transforms.RandomColor(),          # Add color shift
+        aug_custom_transforms.ArrayToTensor(),
+        normalize
+    ])
     valid_transform = aug_custom_transforms.Compose([aug_custom_transforms.ArrayToTensor(), normalize])
 
     print("=> fetching scenes in '{}'".format(args.data))
