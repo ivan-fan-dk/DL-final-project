@@ -1,3 +1,18 @@
+# Monocular Depth Estimation using SE Bottleneck
+
+## Prerequisites: 
+1. Have a Google Drive with minimum 5GB of free space.
+2. (Optional) Have a Google Colab paid plan for computational power.
+
+## Instructions:
+To train models we created and see evaluations, please upload [`DL_project_Universal.ipynb`](./DL_project_Universal.ipynb) to [Google Colab](http://colab.research.google.com/) and run cell blocks in sequence. :smile:
+
+Best,
+
+Daniel Han, Ivan Fan, Yukun Yan, Lucas Orquiza
+
+---
+
 # SfMLearner Pytorch version
 This codebase implements the system described in the paper:
 
